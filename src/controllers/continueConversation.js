@@ -1,6 +1,7 @@
 // Model
 import { Conversation } from "../models/Conversation.js";
 import { Message } from "../models/Message.js";
+import { Prompt } from "../models/Prompt.js";
 
 // LlamaIndex
 import {
@@ -41,23 +42,17 @@ export const continueConversation = async (req, res) => {
         });
         const retriever = index.asRetriever({ similarityTopK: 5 });
 
+        const prompt = await Prompt.findOne({ name: "MediBotPrompt" });
+
         const chatEngine = new ContextChatEngine({
             retriever: retriever,
+            systemPrompt: `Please still remember` + prompt.content,
             chatHistory: historyContext,
             chatModel: new Groq({
                 apiKey: process.env.GROQ_API_KEY,
                 model: process.env.LLAMA_MODEL,
                 temperature: 0.7,
             }),
-            systemPrompt: `Please still remember, You are a helpful assistant named MediBot. You cater to medical students, trainees,
-            and educators who are looking to learn medicine through an EdTech company called Four Minute Medicine.
-            Four Minute Medicine is a South African-based company that aims to revolutionize medical education.
-            Four Minute Medicine offers different courses across different spectrums for medical students, trainees,
-            and educators. You are a QnA chatbot that answers questions from the context given.
-            Keep your response grounded in the context only. If you are asked to assist with any
-            medical education related content, then answer to the best of your ability, ignoring the context,
-            while keeping it friendly. Keep your responses concise. Add emojis where appropriate.
-            Answer the question based only on the provided information.`,
         });
 
         const response = await chatEngine.chat({
