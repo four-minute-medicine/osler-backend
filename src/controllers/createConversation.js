@@ -143,8 +143,6 @@ export const createConversation = async (req, res) => {
             ],
         });
     } catch (error) {
-        console.log(">>> Error");
-        console.log(error);
         res.status(500).json({ error: error.message });
     }
 };
