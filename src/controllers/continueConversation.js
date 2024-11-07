@@ -3,14 +3,18 @@ import { Conversation } from "../models/Conversation.js";
 import { Message } from "../models/Message.js";
 import { Prompt } from "../models/Prompt.js";
 
+// Qdrant Vector Store
+import { vectorStore } from "../config/vectorStoreClient.js";
+
 // LlamaIndex
-import {
-    Document,
-    QdrantVectorStore,
-    VectorStoreIndex,
-    ContextChatEngine,
-} from "llamaindex";
+import { Document, VectorStoreIndex, ContextChatEngine } from "llamaindex";
 import { Groq } from "@llamaindex/groq";
+
+import mammoth from "mammoth";
+import { exec } from "child_process";
+import fs from "fs";
+import axios from "axios";
+import * as cheerio from "cheerio";
 
 export const continueConversation = async (req, res) => {
     try {
@@ -27,16 +31,76 @@ export const continueConversation = async (req, res) => {
             content: message.user_prompt,
         }));
 
-        const vectorStore = new QdrantVectorStore({
-            url: "http://localhost:6333",
-        });
+        const downloadFileFromURL = async (url) => {
+            const response = await axios.get(url, {
+                responseType: "arraybuffer",
+            });
+            return response.data;
+        };
 
-        const essay = `In college, the author majored in Computer Science and was actively involved in various projects.
-                They worked on developing a mobile application that aimed to improve student engagement on campus.
-                Additionally, they participated in hackathons, where they
-                collaborated with peers to create innovative solutions for real-world problems.`;
+        const parseDocx = async (file) => {
+            const result = await mammoth.extractRawText({ buffer: file });
+            return result.value;
+        };
 
-        const document = new Document({ text: essay });
+        const downloadTextFromWebPage = async (url) => {
+            const response = await axios.get(url);
+            const $ = cheerio.load(response.data);
+            return $("body").text();
+        };
+
+        const parseKeyOrPages = async (filePath) => {
+            return new Promise((resolve, reject) => {
+                exec(
+                    `textutil -convert txt -stdout "${filePath}"`,
+                    (error, stdout, stderr) => {
+                        if (error) {
+                            reject(`Error parsing file: ${stderr}`);
+                        } else {
+                            resolve(stdout);
+                        }
+                    }
+                );
+            });
+        };
+
+        const files = [
+            process.env.S3_BUCKET_URI_DOCX,
+            process.env.S3_BUCKET_URI_DOCX_1,
+            process.env.S3_BUCKET_URI_KEY,
+            process.env.S3_BUCKET_URI_PAGES,
+            process.env.S3_BUCKET_URI_WIKI_1,
+            process.env.S3_BUCKET_URI_WIKI_2,
+            process.env.S3_BUCKET_URI_WIKI_3,
+            process.env.S3_BUCKET_URI_WIKI_4,
+            process.env.S3_BUCKET_URI_WIKI_5,
+            process.env.S3_BUCKET_URI_WIKI_6,
+            process.env.S3_BUCKET_URI_WIKI_7,
+        ];
+
+        const documents = await Promise.all(
+            files.map(async (fileUrl) => {
+                const file = await downloadFileFromURL(fileUrl);
+                let parsedDocument;
+
+                if (fileUrl.endsWith(".docx")) {
+                    parsedDocument = await parseDocx(file);
+                } else if (
+                    fileUrl.endsWith(".key") ||
+                    fileUrl.endsWith(".pages")
+                ) {
+                    const localFilePath = `/tmp/${fileUrl.split("/").pop()}`;
+                    fs.writeFileSync(localFilePath, file);
+                    parsedDocument = await parseKeyOrPages(localFilePath);
+                } else {
+                    parsedDocument = await downloadTextFromWebPage(fileUrl);
+                }
+
+                return parsedDocument;
+            })
+        );
+
+        const document = new Document({ text: documents });
         const index = await VectorStoreIndex.fromDocuments([document], {
             vectorStore,
         });
@@ -85,7 +149,6 @@ export const continueConversation = async (req, res) => {
             ],
         });
     } catch (error) {
-        console.log(">>> Error", error);
         res.status(500).json({ error: error.message });
     }
 };

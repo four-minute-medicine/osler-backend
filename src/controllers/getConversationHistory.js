@@ -12,7 +12,6 @@ export const getConversationHistory = async (req, res) => {
 
         res.status(200).json({ conversation, messages });
     } catch (error) {
-        console.log(">>> Error", error);
         res.status(500).json({ error: error.message });
     }
 };
