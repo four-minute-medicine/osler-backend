@@ -28,8 +28,7 @@ mongoose
     .then(() => {
         app.listen(PORT, () => {
             console.log("Connected to MongoDB🚀");
-            console.log("4MM Llama-Hackathon Server");
-            console.log(`🚀 Server Started on PORT ${PORT}`);
+            console.log(`🚀 Osler Server Started on PORT ${PORT}`);
         });
     })
     .catch((error) => {
