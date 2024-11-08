@@ -10,11 +10,17 @@ import { vectorStore } from "../config/vectorStoreClient.js";
 import { Document, VectorStoreIndex, ContextChatEngine } from "llamaindex";
 import { Groq } from "@llamaindex/groq";
 
+// Axios
+import axios from "axios";
+
+// Cheerio
+import * as cheerio from "cheerio";
+
+// Mammoth
 import mammoth from "mammoth";
+
 import { exec } from "child_process";
 import fs from "fs";
-import axios from "axios";
-import * as cheerio from "cheerio";
 
 export const createConversation = async (req, res) => {
     try {
@@ -58,13 +64,6 @@ export const createConversation = async (req, res) => {
             process.env.S3_BUCKET_URI_DOCX_1,
             process.env.S3_BUCKET_URI_KEY,
             process.env.S3_BUCKET_URI_PAGES,
-            process.env.S3_BUCKET_URI_WIKI_1,
-            process.env.S3_BUCKET_URI_WIKI_2,
-            process.env.S3_BUCKET_URI_WIKI_3,
-            process.env.S3_BUCKET_URI_WIKI_4,
-            process.env.S3_BUCKET_URI_WIKI_5,
-            process.env.S3_BUCKET_URI_WIKI_6,
-            process.env.S3_BUCKET_URI_WIKI_7,
         ];
 
         const documents = await Promise.all(
@@ -96,7 +95,6 @@ export const createConversation = async (req, res) => {
         const retriever = index.asRetriever({ similarityTopK: 5 });
 
         const prompt = await Prompt.findOne({ name: "MediBotPrompt" });
-
         const chatEngine = new ContextChatEngine({
             retriever: retriever,
             systemPrompt: prompt.content,
@@ -143,6 +141,8 @@ export const createConversation = async (req, res) => {
             ],
         });
     } catch (error) {
+        console.log(">>> Error")
+        console.log(error)
         res.status(500).json({ error: error.message });
     }
 };

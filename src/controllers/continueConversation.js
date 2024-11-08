@@ -25,7 +25,6 @@ export const continueConversation = async (req, res) => {
         const conversationHistory = await Message.find({
             conversation: id,
         }).select("-conversation -_id");
-
         const historyContext = conversationHistory.map((message) => ({
             role: message.user_type === "student" ? "Student" : "assistant",
             content: message.user_prompt,
@@ -69,13 +68,6 @@ export const continueConversation = async (req, res) => {
             process.env.S3_BUCKET_URI_DOCX_1,
             process.env.S3_BUCKET_URI_KEY,
             process.env.S3_BUCKET_URI_PAGES,
-            process.env.S3_BUCKET_URI_WIKI_1,
-            process.env.S3_BUCKET_URI_WIKI_2,
-            process.env.S3_BUCKET_URI_WIKI_3,
-            process.env.S3_BUCKET_URI_WIKI_4,
-            process.env.S3_BUCKET_URI_WIKI_5,
-            process.env.S3_BUCKET_URI_WIKI_6,
-            process.env.S3_BUCKET_URI_WIKI_7,
         ];
 
         const documents = await Promise.all(
@@ -107,7 +99,6 @@ export const continueConversation = async (req, res) => {
         const retriever = index.asRetriever({ similarityTopK: 5 });
 
         const prompt = await Prompt.findOne({ name: "MediBotPrompt" });
-
         const chatEngine = new ContextChatEngine({
             retriever: retriever,
             systemPrompt: `Please still remember` + prompt.content,
