@@ -35,7 +35,6 @@ export const createConversation = async (req, res) => {
                 return textContent;
             })
         );
-
         const document = new Document({ text: documents });
         const index = await VectorStoreIndex.fromDocuments([document], {
             vectorStore,

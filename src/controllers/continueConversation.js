@@ -10,11 +10,8 @@ import { vectorStore } from "../config/vectorStoreClient.js";
 import { Document, VectorStoreIndex, ContextChatEngine } from "llamaindex";
 import { Groq } from "@llamaindex/groq";
 
-import mammoth from "mammoth";
-import { exec } from "child_process";
-import fs from "fs";
+// Axios
 import axios from "axios";
-import * as cheerio from "cheerio";
 
 export const continueConversation = async (req, res) => {
     try {
@@ -32,35 +29,9 @@ export const continueConversation = async (req, res) => {
 
         const downloadFileFromURL = async (url) => {
             const response = await axios.get(url, {
-                responseType: "arraybuffer",
+                responseType: "text",
             });
             return response.data;
-        };
-
-        const parseDocx = async (file) => {
-            const result = await mammoth.extractRawText({ buffer: file });
-            return result.value;
-        };
-
-        const downloadTextFromWebPage = async (url) => {
-            const response = await axios.get(url);
-            const $ = cheerio.load(response.data);
-            return $("body").text();
-        };
-
-        const parseKeyOrPages = async (filePath) => {
-            return new Promise((resolve, reject) => {
-                exec(
-                    `textutil -convert txt -stdout "${filePath}"`,
-                    (error, stdout, stderr) => {
-                        if (error) {
-                            reject(`Error parsing file: ${stderr}`);
-                        } else {
-                            resolve(stdout);
-                        }
-                    }
-                );
-            });
         };
 
         const files = [
@@ -70,26 +41,10 @@ export const continueConversation = async (req, res) => {
 
         const documents = await Promise.all(
             files.map(async (fileUrl) => {
-                const file = await downloadFileFromURL(fileUrl);
-                let parsedDocument;
-
-                if (fileUrl.endsWith(".docx")) {
-                    parsedDocument = await parseDocx(file);
-                } else if (
-                    fileUrl.endsWith(".key") ||
-                    fileUrl.endsWith(".pages")
-                ) {
-                    const localFilePath = `/tmp/${fileUrl.split("/").pop()}`;
-                    fs.writeFileSync(localFilePath, file);
-                    parsedDocument = await parseKeyOrPages(localFilePath);
-                } else {
-                    parsedDocument = await downloadTextFromWebPage(fileUrl);
-                }
-
-                return parsedDocument;
+                const textContent = await downloadFileFromURL(fileUrl);
+                return textContent;
             })
         );
-
         const document = new Document({ text: documents });
         const index = await VectorStoreIndex.fromDocuments([document], {
             vectorStore,
