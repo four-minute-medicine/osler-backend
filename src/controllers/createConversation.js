@@ -19,7 +19,6 @@ import * as cheerio from "cheerio";
 // Mammoth
 import mammoth from "mammoth";
 
-import { exec } from "child_process";
 import fs from "fs";
 
 export const createConversation = async (req, res) => {
@@ -28,62 +27,20 @@ export const createConversation = async (req, res) => {
 
         const downloadFileFromURL = async (url) => {
             const response = await axios.get(url, {
-                responseType: "arraybuffer",
+                responseType: "text",
             });
-            console.log(">>> Console 1")
-            console.log(response.data)
             return response.data;
         };
 
-        const parseDocx = async (file) => {
-            const result = await mammoth.extractRawText({ buffer: file });
-            console.log(">>> Console 2")
-            console.log(result.value)
-            return result.value;
-        };
-
-        const parseKeyOrPages = async (filePath) => {
-            return new Promise((resolve, reject) => {
-                exec(
-                    `textutil -convert txt -stdout "${filePath}"`,
-                    (error, stdout, stderr) => {
-                        if (error) {
-                            console.log(">>> Console 3")                
-                            reject(`Error parsing file: ${stderr}`);
-                        } else {
-                            console.log(">>> Console 4")                
-                            resolve(stdout);
-                        }
-                    }
-                );
-            });
-        };
-
         const files = [
-            process.env.S3_BUCKET_URI_DOCX,
-            process.env.S3_BUCKET_URI_DOCX_1,
-            process.env.S3_BUCKET_URI_KEY,
-            process.env.S3_BUCKET_URI_PAGES,
+            process.env.S3_BUCKET_URI_SCRIPT,
+            process.env.S3_BUCKET_URI_SUMMARY,
         ];
 
         const documents = await Promise.all(
             files.map(async (fileUrl) => {
-                const file = await downloadFileFromURL(fileUrl);
-                let parsedDocument;
-
-                if (fileUrl.endsWith(".docx")) {
-                    parsedDocument = await parseDocx(file);
-                } else if (
-                    fileUrl.endsWith(".key") ||
-                    fileUrl.endsWith(".pages")
-                ) {
-                    const localFilePath = `/tmp/${fileUrl.split("/").pop()}`;
-                    fs.writeFileSync(localFilePath, file);
-                    parsedDocument = await parseKeyOrPages(localFilePath);
-                }
-                console.log(">>> Console 4")   
-                console.log(parsedDocument)                             
-                return parsedDocument;
+                const textContent = await downloadFileFromURL(fileUrl);
+                return textContent;
             })
         );
 
@@ -140,8 +97,8 @@ export const createConversation = async (req, res) => {
             ],
         });
     } catch (error) {
-        console.log(">>> Error")
-        console.log(error)
+        console.log(">>> Error");
+        console.log(error);
         res.status(500).json({ error: error.message });
     }
 };

@@ -64,12 +64,10 @@ export const continueConversation = async (req, res) => {
         };
 
         const files = [
-            process.env.S3_BUCKET_URI_DOCX,
-            process.env.S3_BUCKET_URI_DOCX_1,
-            process.env.S3_BUCKET_URI_KEY,
-            process.env.S3_BUCKET_URI_PAGES,
+            process.env.S3_BUCKET_URI_SCRIPT,
+            process.env.S3_BUCKET_URI_SUMMARY,
         ];
-
+        
         const documents = await Promise.all(
             files.map(async (fileUrl) => {
                 const file = await downloadFileFromURL(fileUrl);
