@@ -16,6 +16,10 @@ const conversationSchema = new mongoose.Schema({
             ref: "Message",
         },
     ],
+    timestamp: {
+        type: Date,
+        default: Date.now,
+    },
 });
 
 export const Conversation = mongoose.model("Conversation", conversationSchema);

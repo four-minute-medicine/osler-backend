@@ -67,7 +67,7 @@ export const continueConversation = async (req, res) => {
             process.env.S3_BUCKET_URI_SCRIPT,
             process.env.S3_BUCKET_URI_SUMMARY,
         ];
-        
+
         const documents = await Promise.all(
             files.map(async (fileUrl) => {
                 const file = await downloadFileFromURL(fileUrl);
@@ -138,6 +138,8 @@ export const continueConversation = async (req, res) => {
             ],
         });
     } catch (error) {
+        console.log(">>> Error")
+        console.log(error)
         res.status(500).json({ error: error.message });
     }
 };

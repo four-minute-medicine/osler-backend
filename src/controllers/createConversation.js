@@ -13,14 +13,6 @@ import { Groq } from "@llamaindex/groq";
 // Axios
 import axios from "axios";
 
-// Cheerio
-import * as cheerio from "cheerio";
-
-// Mammoth
-import mammoth from "mammoth";
-
-import fs from "fs";
-
 export const createConversation = async (req, res) => {
     try {
         const { question } = req.body;
@@ -65,13 +57,19 @@ export const createConversation = async (req, res) => {
             stream: false,
         });
 
-        const truncatedQuestion =
-            question.length > 20 ? question.substring(0, 20) + "..." : question;
+        const generateTitle = async (question) => {
+            const titleResponse = await chatEngine.chat({
+                message: `Generate a title for the following question: ${question}`,
+                stream: false,
+            });
+            return titleResponse.message.content;
+        };
 
+        const title = await generateTitle(question);
         const conversation = await new Conversation({
-            title: truncatedQuestion,
+            title: title,
         }).save();
-
+    
         const studentMessage = await new Message({
             user_prompt: question,
             user_type: "student",
@@ -88,6 +86,7 @@ export const createConversation = async (req, res) => {
         await conversation.save();
 
         res.json({
+            conversationId: conversation._id,
             messages: [
                 { user_type: "student", message: question },
                 {
