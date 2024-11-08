@@ -38,14 +38,8 @@ export const createConversation = async (req, res) => {
         const parseDocx = async (file) => {
             const result = await mammoth.extractRawText({ buffer: file });
             console.log(">>> Console 2")
-            console.log(response.value)
+            console.log(result.value)
             return result.value;
-        };
-
-        const downloadTextFromWebPage = async (url) => {
-            const response = await axios.get(url);
-            const $ = cheerio.load(response.data);
-            return $("body").text();
         };
 
         const parseKeyOrPages = async (filePath) => {
@@ -86,8 +80,6 @@ export const createConversation = async (req, res) => {
                     const localFilePath = `/tmp/${fileUrl.split("/").pop()}`;
                     fs.writeFileSync(localFilePath, file);
                     parsedDocument = await parseKeyOrPages(localFilePath);
-                } else {
-                    parsedDocument = await downloadTextFromWebPage(fileUrl);
                 }
                 console.log(">>> Console 4")   
                 console.log(parsedDocument)                             
