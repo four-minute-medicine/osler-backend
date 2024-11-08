@@ -30,11 +30,15 @@ export const createConversation = async (req, res) => {
             const response = await axios.get(url, {
                 responseType: "arraybuffer",
             });
+            console.log(">>> Console 1")
+            console.log(response.data)
             return response.data;
         };
 
         const parseDocx = async (file) => {
             const result = await mammoth.extractRawText({ buffer: file });
+            console.log(">>> Console 2")
+            console.log(response.value)
             return result.value;
         };
 
@@ -50,8 +54,10 @@ export const createConversation = async (req, res) => {
                     `textutil -convert txt -stdout "${filePath}"`,
                     (error, stdout, stderr) => {
                         if (error) {
+                            console.log(">>> Console 3")                
                             reject(`Error parsing file: ${stderr}`);
                         } else {
+                            console.log(">>> Console 4")                
                             resolve(stdout);
                         }
                     }
@@ -83,7 +89,8 @@ export const createConversation = async (req, res) => {
                 } else {
                     parsedDocument = await downloadTextFromWebPage(fileUrl);
                 }
-
+                console.log(">>> Console 4")   
+                console.log(parsedDocument)                             
                 return parsedDocument;
             })
         );
