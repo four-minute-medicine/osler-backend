@@ -35,8 +35,10 @@ export const continueConversation = async (req, res) => {
         };
 
         const files = [
-            process.env.S3_BUCKET_URI_SCRIPT,
-            process.env.S3_BUCKET_URI_SUMMARY,
+            process.env.S3_BUCKET_URI_BOOKLET,
+            // process.env.S3_BUCKET_URI_INFO_ONE,
+            // process.env.S3_BUCKET_URI_INFO_TWO,
+            // process.env.S3_BUCKET_URI_INFO_THREE,
         ];
 
         const documents = await Promise.all(
@@ -45,6 +47,7 @@ export const continueConversation = async (req, res) => {
                 return textContent;
             })
         );
+
         const document = new Document({ text: documents });
         const index = await VectorStoreIndex.fromDocuments([document], {
             vectorStore,
@@ -93,8 +96,20 @@ export const continueConversation = async (req, res) => {
             ],
         });
     } catch (error) {
-        console.log(">>> Error")
-        console.log(error)
+        console.log(">>> Error");
+        console.log(error);
         res.status(500).json({ error: error.message });
     }
+};
+
+export const continueParentConversation = (req, res) => {
+    continueConversation(req, res, "parent");
+};
+
+export const continueHcwConversation = (req, res) => {
+    continueConversation(req, res, "hcw");
+};
+
+export const continueVirtualPatientConversation = (req, res) => {
+    continueConversation(req, res, "virtual_patient");
 };

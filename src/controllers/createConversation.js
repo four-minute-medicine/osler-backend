@@ -13,7 +13,7 @@ import { Groq } from "@llamaindex/groq";
 // Axios
 import axios from "axios";
 
-export const createConversation = async (req, res) => {
+export const createConversation = async (req, res, userType) => {
     try {
         const { question } = req.body;
 
@@ -25,8 +25,10 @@ export const createConversation = async (req, res) => {
         };
 
         const files = [
-            process.env.S3_BUCKET_URI_SCRIPT,
-            process.env.S3_BUCKET_URI_SUMMARY,
+            process.env.S3_BUCKET_URI_BOOKLET,
+            // process.env.S3_BUCKET_URI_INFO_ONE,
+            // process.env.S3_BUCKET_URI_INFO_TWO,
+            // process.env.S3_BUCKET_URI_INFO_THREE,
         ];
 
         const documents = await Promise.all(
@@ -68,10 +70,10 @@ export const createConversation = async (req, res) => {
         const conversation = await new Conversation({
             title: title,
         }).save();
-    
+
         const studentMessage = await new Message({
             user_prompt: question,
-            user_type: "student",
+            user_type: userType,
             conversation: conversation._id,
         }).save();
 
@@ -87,7 +89,7 @@ export const createConversation = async (req, res) => {
         res.json({
             conversationId: conversation._id,
             messages: [
-                { user_type: "student", message: question },
+                { user_type: userType, message: question },
                 {
                     user_type: "assistant",
                     message: response.message.content,
@@ -99,4 +101,16 @@ export const createConversation = async (req, res) => {
         console.log(error);
         res.status(500).json({ error: error.message });
     }
+};
+
+export const createParentConversation = (req, res) => {
+    createConversation(req, res, "parent");
+};
+
+export const createHcwConversation = (req, res) => {
+    createConversation(req, res, "hcw");
+};
+
+export const createVirtualPatientConversation = (req, res) => {
+    createConversation(req, res, "virtual_patient");
 };
