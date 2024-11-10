@@ -13,7 +13,7 @@ import { Groq } from "@llamaindex/groq";
 // Axios
 import axios from "axios";
 
-export const createConversation = async (req, res, userType) => {
+export const createConvoParent = async (req, res) => {
     try {
         const { question } = req.body;
 
@@ -54,14 +54,7 @@ export const createConversation = async (req, res, userType) => {
         });
         const retriever = index.asRetriever({ similarityTopK: 5 });
 
-        let prompt;
-        if (userType === "parent") {
-            prompt = await Prompt.findOne({ name: "Parents" });
-        } else if (userType === "hcw") {
-            prompt = await Prompt.findOne({ name: "HCW" });
-        } else if (userType === "virtual_patient") {
-            prompt = await Prompt.findOne({ name: "VirtualPatientSimulator" });
-        }
+        const prompt = await Prompt.findOne({ name: "Parents" });
 
         const chatEngine = new ContextChatEngine({
             retriever: retriever,
@@ -92,7 +85,7 @@ export const createConversation = async (req, res, userType) => {
 
         const studentMessage = await new Message({
             user_prompt: question,
-            user_type: userType,
+            user_type: "parent",
             conversation: conversation._id,
         }).save();
 
@@ -108,7 +101,7 @@ export const createConversation = async (req, res, userType) => {
         res.json({
             conversationId: conversation._id,
             messages: [
-                { user_type: userType, message: question },
+                { user_type: "parent", message: question },
                 {
                     user_type: "assistant",
                     message: response.message.content,
