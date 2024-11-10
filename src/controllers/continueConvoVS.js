@@ -35,7 +35,7 @@ export const continueConvoVS = async (req, res, userType) => {
         };
 
         const files = [
-            // process.env.S3_BUCKET_URI_BOOKLET,
+            process.env.S3_BUCKET_URI_BOOKLET,
             process.env.S3_BUCKET_URI_INFO_ONE,
             process.env.S3_BUCKET_URI_INFO_TWO,
             process.env.S3_BUCKET_URI_INFO_THREE,
