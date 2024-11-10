@@ -31,12 +31,23 @@ export const createConversation = async (req, res, userType) => {
             process.env.S3_BUCKET_URI_INFO_THREE,
         ];
 
+        const validFiles = files.filter(fileUrl => {
+            try {
+                new URL(fileUrl);
+                return true;
+            } catch (e) {
+                console.error(`Invalid URL: ${fileUrl}`);
+                return false;
+            }
+        });
+        
         const documents = await Promise.all(
-            files.map(async (fileUrl) => {
+            validFiles.map(async (fileUrl) => {
                 const textContent = await downloadFileFromURL(fileUrl);
                 return textContent;
             })
         );
+        
         const document = new Document({ text: documents });
         const index = await VectorStoreIndex.fromDocuments([document], {
             vectorStore,
