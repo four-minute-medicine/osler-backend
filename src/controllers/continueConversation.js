@@ -13,7 +13,7 @@ import { Groq } from "@llamaindex/groq";
 // Axios
 import axios from "axios";
 
-export const continueConversation = async (req, res) => {
+export const continueConversation = async (req, res, userType) => {
     try {
         const { id } = req.params;
         const { question } = req.body;
@@ -36,9 +36,9 @@ export const continueConversation = async (req, res) => {
 
         const files = [
             process.env.S3_BUCKET_URI_BOOKLET,
-            // process.env.S3_BUCKET_URI_INFO_ONE,
-            // process.env.S3_BUCKET_URI_INFO_TWO,
-            // process.env.S3_BUCKET_URI_INFO_THREE,
+            process.env.S3_BUCKET_URI_INFO_ONE,
+            process.env.S3_BUCKET_URI_INFO_TWO,
+            process.env.S3_BUCKET_URI_INFO_THREE,
         ];
 
         const documents = await Promise.all(
@@ -54,7 +54,15 @@ export const continueConversation = async (req, res) => {
         });
         const retriever = index.asRetriever({ similarityTopK: 5 });
 
-        const prompt = await Prompt.findOne({ name: "MediBotPrompt" });
+        let prompt;
+        if (userType === "parent") {
+            prompt = await Prompt.findOne({ name: "Parents" });
+        } else if (userType === "hcw") {
+            prompt = await Prompt.findOne({ name: "HCW" });
+        } else if (userType === "virtual_patient") {
+            prompt = await Prompt.findOne({ name: "VirtualPatientSimulator" });
+        }
+
         const chatEngine = new ContextChatEngine({
             retriever: retriever,
             systemPrompt: `Please still remember` + prompt.content,
@@ -73,7 +81,7 @@ export const continueConversation = async (req, res) => {
 
         const studentMessage = await new Message({
             user_prompt: question,
-            user_type: "student",
+            user_type: userType,
             conversation: conversation._id,
         }).save();
 
@@ -88,7 +96,7 @@ export const continueConversation = async (req, res) => {
 
         res.json({
             messages: [
-                { user_type: "student", message: question },
+                { user_type: userType, message: question },
                 {
                     user_type: "assistant",
                     message: response.message.content,

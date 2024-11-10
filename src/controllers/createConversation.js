@@ -26,9 +26,9 @@ export const createConversation = async (req, res, userType) => {
 
         const files = [
             process.env.S3_BUCKET_URI_BOOKLET,
-            // process.env.S3_BUCKET_URI_INFO_ONE,
-            // process.env.S3_BUCKET_URI_INFO_TWO,
-            // process.env.S3_BUCKET_URI_INFO_THREE,
+            process.env.S3_BUCKET_URI_INFO_ONE,
+            process.env.S3_BUCKET_URI_INFO_TWO,
+            process.env.S3_BUCKET_URI_INFO_THREE,
         ];
 
         const documents = await Promise.all(
@@ -43,7 +43,15 @@ export const createConversation = async (req, res, userType) => {
         });
         const retriever = index.asRetriever({ similarityTopK: 5 });
 
-        const prompt = await Prompt.findOne({ name: "MediBotPrompt" });
+        let prompt;
+        if (userType === "parent") {
+            prompt = await Prompt.findOne({ name: "Parents" });
+        } else if (userType === "hcw") {
+            prompt = await Prompt.findOne({ name: "HCW" });
+        } else if (userType === "virtual_patient") {
+            prompt = await Prompt.findOne({ name: "VirtualPatientSimulator" });
+        }
+
         const chatEngine = new ContextChatEngine({
             retriever: retriever,
             systemPrompt: prompt.content,
